@@ -268,6 +268,20 @@ def _text_contains_case_sensitive(data: pa.Array, pat: str) -> pa.Array:
 
 
 @njit
+def _slice(sa, start, stop, end, na, offset, out):
+    for i in range(sa.size):
+        if sa.isnull(i):
+            out[offset + i] = na
+            continue
+
+        out[offset + i] = ""
+        for j in range(start, stop, end):
+            out[offset + i] += sa.get_byte(
+                i, j
+            )  # FIX: this should get the bytes for character j of string i
+
+
+@njit
 def _startswith(sa, needle, na, offset, out):
     for i in range(sa.size):
         if sa.isnull(i):

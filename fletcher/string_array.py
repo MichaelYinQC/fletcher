@@ -13,6 +13,7 @@ from fletcher._algorithms import _extract_isnull_bitmap
 from fletcher.algorithms.bool import all_true_like
 from fletcher.algorithms.string import (
     _endswith,
+    _slice,
     _startswith,
     _text_cat,
     _text_cat_chunked,
@@ -352,6 +353,24 @@ class TextAccessor:
     def zfill(self, width: int) -> pd.Series:
         """Pad strings in the Series/Index by prepending '0' characters."""
         return self._call_str_accessor("zfill", width)
+
+    def slice(self, start, end, step):
+        """Return a slice from a row."""
+        result = np.empty(len(self.data), dtype=np.string)
+
+        if isinstance(self.data, pa.ChunkedArray):
+            offset = 0
+            for chunk in self.data.chunks:
+                str_arr = NumbaStringArray.make(chunk)  # type: ignore
+                _slice(str_arr, start, end, step, 2, offset, result)
+                offset += len(chunk)
+        else:
+            str_arr = NumbaStringArray.make(self.data)  # type: ignore
+            _slice(str_arr, start, end, step, 2, 0, result)
+
+        return pd.Series(
+            type(self.obj.values)(pa.array(result.astype(str), mask=(result == 2)))
+        )
 
     def startswith(self, pat):
         """Check whether a row starts with a certain pattern."""
