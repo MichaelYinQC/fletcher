@@ -274,11 +274,31 @@ def _slice(sa, start, stop, end, na, offset, out):
             out[offset + i] = na
             continue
 
-        out[offset + i] = ""
-        for j in range(start, stop, end):
-            out[offset + i] += sa.get_byte(
-                i, j
-            )  # FIX: this should get the bytes for character j of string i
+        string_builder = []
+        desired_chars = list(range(start, stop, end))
+        byte_num = 0  # Check whether 0-indexed or 1-indexed
+        char_num = 0
+
+        while byte_num < sa.byte_length(i):
+            first_byte = sa.get_byte(i, byte_num)
+
+            bytes_in_char = 0
+            if first_byte < 0b10000000:
+                bytes_in_char = 1
+            elif first_byte < 0b11100000:
+                bytes_in_char = 2
+            elif first_byte < 0b11110000:
+                bytes_in_char = 3
+            else:
+                bytes_in_char = 4
+
+            if char_num in desired_chars:
+                for j in range(bytes_in_char):
+                    string_builder.append(sa.get_byte(i, byte_num + j))
+
+            byte_num += bytes_in_char
+
+        out[offset + i] = string_builder  # Edit for real string builder
 
 
 @njit

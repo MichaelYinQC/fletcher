@@ -362,14 +362,20 @@ class TextAccessor:
             offset = 0
             for chunk in self.data.chunks:
                 str_arr = NumbaStringArray.make(chunk)  # type: ignore
-                _slice(str_arr, start, end, step, 2, offset, result)
+                _slice(
+                    str_arr, start, end, step, 2, offset, result
+                )  # Replace "2" with an object to represent nulls
                 offset += len(chunk)
         else:
             str_arr = NumbaStringArray.make(self.data)  # type: ignore
-            _slice(str_arr, start, end, step, 2, 0, result)
+            _slice(
+                str_arr, start, end, step, 2, 0, result
+            )  # Replace "2" with an object to represent nulls
 
         return pd.Series(
-            type(self.obj.values)(pa.array(result.astype(str), mask=(result == 2)))
+            type(self.obj.values)(
+                pa.array(result.astype(str), mask=(result == 2))
+            )  # Replace "2" with an object to represent nulls
         )
 
     def startswith(self, pat):
