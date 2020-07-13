@@ -93,13 +93,23 @@ class NumbaStringArray:
 
         return result
 
-    # TODO: implement this
     def get(self, str_idx, byte_idx):
-        b = self.get_byte(str_idx, byte_idx)
-        if b > 127:
-            raise ValueError()
+        byte = self.get_byte(str_idx, byte_idx)
 
-        return b, 1
+        bytes_in_char = 0
+        if byte < 0b10000000:
+            bytes_in_char = 1
+        elif byte < 0b11100000:
+            bytes_in_char = 2
+        elif byte < 0b11110000:
+            bytes_in_char = 3
+        else:
+            bytes_in_char = 4
+
+        return (
+            [self.get_byte(str_idx, byte_idx + b) for b in range(bytes_in_char)],
+            bytes_in_char,
+        )
 
     def decode(self, str_idx):
         byte_length = self.byte_length(str_idx)
